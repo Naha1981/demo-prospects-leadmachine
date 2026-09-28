@@ -1,0 +1,6 @@
+{
+  "name": "RoofLead AI - Sales Demo & Super Admin Suite",
+  "description": "AI-powered roofing lead capture, qualification, and sales demo factory for roofing contractors.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
