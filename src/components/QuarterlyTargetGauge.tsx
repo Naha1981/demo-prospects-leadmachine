@@ -21,7 +21,7 @@ export const QuarterlyTargetGauge: React.FC<QuarterlyTargetGaugeProps> = ({
     {
       name: 'Projected Revenue',
       value: percentage,
-      fill: percentage >= 70 ? '#84cc16' : percentage >= 40 ? '#a3e635' : '#f59e0b'
+      fill: percentage >= 70 ? '#059669' : percentage >= 40 ? '#10b981' : '#d97706'
     }
   ];
 
@@ -34,22 +34,22 @@ export const QuarterlyTargetGauge: React.FC<QuarterlyTargetGaugeProps> = ({
     : 'Early Pipeline';
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col justify-between shadow-sm">
+    <div className="bg-white border border-slate-200 rounded-xl p-6 flex flex-col justify-between shadow-xs">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="text-lime-400 font-bold text-sm">🎯</span>
-            <h4 className="text-sm font-bold text-white tracking-tight">Quarterly Revenue Pacing</h4>
+            <span className="text-emerald-600 font-bold text-sm">🎯</span>
+            <h4 className="text-sm font-bold text-slate-900 tracking-tight">Quarterly Revenue Pacing</h4>
           </div>
-          <p className="text-[11px] text-gray-400 mt-0.5">
+          <p className="text-[11px] text-slate-500 mt-0.5">
             {industryName ? `${industryName} target realization` : 'Projected monthly revenue vs Q target'}
           </p>
         </div>
         <span className={`text-[11px] font-mono px-2.5 py-1 rounded-md border font-medium ${
           percentage >= 60
-            ? 'bg-lime-950/60 text-lime-400 border-lime-800/60'
-            : 'bg-amber-950/60 text-amber-400 border-amber-800/60'
+            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+            : 'bg-amber-50 text-amber-800 border-amber-200'
         }`}>
           {statusLabel}
         </span>
@@ -75,7 +75,7 @@ export const QuarterlyTargetGauge: React.FC<QuarterlyTargetGaugeProps> = ({
               tick={false}
             />
             <RadialBar
-              background={{ fill: '#1f2937' }}
+              background={{ fill: '#f1f5f9' }}
               dataKey="value"
               cornerRadius={8}
             />
@@ -84,30 +84,30 @@ export const QuarterlyTargetGauge: React.FC<QuarterlyTargetGaugeProps> = ({
 
         {/* Center Percentage Display */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-          <span className="text-3xl font-black text-white tracking-tight font-mono">
+          <span className="text-3xl font-black text-slate-900 tracking-tight font-mono">
             {percentage}%
           </span>
-          <span className="text-[10px] text-gray-400 uppercase tracking-widest font-mono mt-0.5">
+          <span className="text-[10px] text-slate-500 uppercase tracking-widest font-mono mt-0.5 font-semibold">
             Target Achieved
           </span>
         </div>
       </div>
 
       {/* Target & Realization Summary Footer */}
-      <div className="pt-3 border-t border-gray-800 grid grid-cols-2 gap-3 text-xs">
+      <div className="pt-3 border-t border-slate-100 grid grid-cols-2 gap-3 text-xs">
         <div>
-          <span className="text-gray-500 text-[10px] uppercase tracking-wider block font-mono">Projected Monthly</span>
-          <span className="font-bold text-lime-400 font-mono text-sm">
+          <span className="text-slate-500 text-[10px] uppercase tracking-wider block font-medium">Projected Monthly</span>
+          <span className="font-bold text-emerald-700 font-mono text-sm">
             {currencyPrefix}{projectedMonthlyRevenue.toLocaleString()}
           </span>
-          <span className="text-[10px] text-gray-500 block">From active pipeline</span>
+          <span className="text-[10px] text-slate-400 block">From active pipeline</span>
         </div>
         <div className="text-right">
-          <span className="text-gray-500 text-[10px] uppercase tracking-wider block font-mono">Quarterly Goal</span>
-          <span className="font-bold text-white font-mono text-sm">
+          <span className="text-slate-500 text-[10px] uppercase tracking-wider block font-medium">Quarterly Goal</span>
+          <span className="font-bold text-slate-900 font-mono text-sm">
             {currencyPrefix}{quarterlyTarget.toLocaleString()}
           </span>
-          <span className="text-[10px] text-gray-500 block">3-Month benchmark</span>
+          <span className="text-[10px] text-slate-400 block">3-Month benchmark</span>
         </div>
       </div>
     </div>
