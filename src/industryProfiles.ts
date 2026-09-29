@@ -6,6 +6,9 @@ export type IndustryId =
   | 'solar'
   | 'hvac'
   | 'auto_repair'
+  | 'cleaning'
+  | 'salon'
+  | 'clinic'
   | 'general';
 
 export interface ScriptStep {
@@ -33,6 +36,7 @@ export interface DemoLead {
   roof: string; // or specific detail
   problem: string;
   aiSummary: string;
+  source?: string;
 }
 
 export interface DemoFollowup {
@@ -662,6 +666,233 @@ export const INDUSTRY_PROFILES: Record<IndustryId, IndustryProfile> = {
     ]
   },
 
+  cleaning: {
+    id: 'cleaning',
+    name: 'Cleaning & Facilities',
+    category: 'Commercial & Domestic Cleaning',
+    services: ['Deep Move-Out Clean', 'Office Sanitization', 'Carpet & Upholstery Extraction', 'Post-Construction Clean', 'Window & Facade Cleaning'],
+    commonProblems: ['End of lease deposit at risk', 'Spills and stains before event', 'Heavy post-renovation dust', 'Sanitation compliance audit'],
+    qualificationQuestions: ['Property type and bedroom count?', 'What specific cleaning package is required?', 'Target date for completion?', 'Where is the property located?'],
+    urgencyRules: {
+      hot: 'Move-out handover within 48h, emergency spill, flood cleanup',
+      warm: 'Standard weekly office contract, monthly carpet extraction',
+      low: 'General inquiry for next month'
+    },
+    leadScoringRules: 'Time-sensitive lease handovers and commercial turnovers score 90-95 for instant crew dispatch.',
+    conversionEvent: 'BOOK CLEANING CREW',
+    leadTypeLabel: 'Cleaning Enquiries',
+    bookingLabel: 'Cleaning Bookings',
+    bookingActionLabel: 'Book Cleaning Crew',
+    valueLabel: 'Job Estimate',
+    teamLabel: 'Assigned Cleaning Crew',
+    serviceAreaLabel: 'Service Coverage',
+    bookingModalTitle: 'Schedule Cleaning Crew',
+    greetingTemplate: "Welcome to {company}. Need professional deep cleaning, office sanitization, or move-out cleaning? Tell us about your space.",
+    brandSuffix: 'CleanLead AI',
+    heroLead: {
+      id: 999,
+      name: "Nomsa Dlamini",
+      suburb: "Midrand",
+      type: "Move-Out Deep Clean",
+      urgency: "HOT",
+      value: 6500,
+      score: 93,
+      status: "Qualified",
+      time: "Just Now",
+      phone: "082 555 0199",
+      email: "nomsa.d@gmail.com",
+      property: "3-Bed Townhouse",
+      roof: "Deep Clean + Carpets",
+      problem: "Tenant lease expires Friday. Urgent full move-out clean with steam extraction needed to secure deposit.",
+      aiSummary: "HOT LEAD: Urgent 3-bed townhouse move-out deep clean in Midrand. High deposit urgency with full carpet wash.",
+      source: "WhatsApp"
+    },
+    sampleLeads: [
+      { id: 1, name: "Thabo Nkosi", suburb: "Sandton", type: "Office Sanitization", urgency: "WARM", value: 14000, score: 78, status: "Contacted", time: "2 hours ago", phone: "082 123 4567", email: "thabo@corp.co.za", property: "Corporate Office", roof: "Twice-weekly contract", problem: "Need regular office cleaning quote.", aiSummary: "Commercial contract lead. Responsive office manager.", source: "Facebook Ad" },
+      { id: 2, name: "Lerato Modise", suburb: "Fourways", type: "Carpet Extraction", urgency: "WARM", value: 4500, score: 70, status: "New", time: "4 hours ago", phone: "071 987 6543", email: "lerato.m@email.com", property: "Residential", roof: "Lounge & 3 Bedrooms", problem: "Wine stains after birthday party.", aiSummary: "Standard stain removal job.", source: "Instagram" },
+      { id: 3, name: "David Smit", suburb: "Centurion", type: "Post-Build Cleanup", urgency: "HOT", value: 18500, score: 91, status: "Inspection Booked", time: "Yesterday", phone: "083 444 5555", email: "dsmit@builder.co.za", property: "Commercial", roof: "Warehouse", problem: "Post-renovation rubble and window cleaning.", aiSummary: "Commercial handover deadline.", source: "WhatsApp" }
+    ],
+    sampleFollowups: [
+      { id: 1, lead: "Thabo Nkosi", stage: "Contract Proposal", message: "Hi Thabo, following up on your office cleaning contract proposal for Sandton.", nextAction: "Send Quote PDF", status: "Completed" }
+    ],
+    sampleBookings: [
+      { id: 1, customer: "David Smit", suburb: "Centurion", date: "2026-03-30", time: "08:30 AM", team: "Crew Alpha (4 Specialists)", value: "R18,500", status: "Confirmed", type: "Post-Build Cleanup" }
+    ],
+    benchmarks: {
+      avgResponseTime: "35 seconds",
+      industryAvgResponse: "3.8 hours",
+      monthlyEnquiryVolume: "110 – 240 leads / mo",
+      afterHoursEnquiryShare: "46% (evenings & lease moves)",
+      avgDealValue: "R4,500 – R22,000",
+      conversionLift: "+38% booked jobs",
+      missedCallRate: "33% lost to next available provider",
+      keyPitchPoint: "Move-out and post-event enquiries are hyper time-sensitive. The first cleaning business to respond with instant pricing and open slots wins over 70% of bookings."
+    },
+    getScript: (companyName, greeting) => [
+      { id: 0, type: 'ai', text: greeting || `Welcome to ${companyName}. How can our cleaning team assist you today?` },
+      { id: 1, type: 'user', text: "Hi, we are handing over our 3-bedroom townhouse this Friday and need a full deep move-out clean with carpet wash.", action: "Send message" },
+      { id: 2, type: 'ai', text: "We specialize in end-of-lease move-out cleans with deposit guarantee! What suburb is the property located in?" },
+      { id: 3, type: 'user', text: "Midrand. It's a 3 bed, 2 bath townhouse.", action: "Midrand (3 Bed, 2 Bath)" },
+      { id: 4, type: 'ai', text: "Got it. Does the property have power and water connected for our commercial extraction equipment?" },
+      { id: 5, type: 'user', text: "Yes, both power and water are active.", action: "Yes, power & water active" },
+      { id: 6, type: 'ai', text: "Do you have any photos or specific stain areas our team should prepare special treatment for?" },
+      { id: 7, type: 'user', text: "[Photo Uploaded: townhouse_carpet_midrand.jpg]", action: "Upload Carpet Photo", isUpload: true },
+      { id: 8, type: 'ai', text: "Thank you. Best cell number to confirm the booking team?" },
+      { id: 9, type: 'user', text: "082 555 0199", action: "Enter Phone: 082 555 0199" },
+      { id: 10, type: 'ai', text: "We have our 4-person deep cleaning team open this Thursday morning at 08:30 AM. Shall we reserve that slot for your handover?" },
+      { id: 11, type: 'user', text: "Yes please, book Thursday at 08:30 AM.", action: "Confirm Booking for Thursday" },
+      { id: 12, type: 'ai', text: `Thanks Nomsa — your move-out clean for ${companyName} has been booked as HOT (Score 93/100). Crew Alpha has your Thursday 08:30 AM slot reserved!`, isFinal: true }
+    ]
+  },
+
+  salon: {
+    id: 'salon',
+    name: 'Salon & Aesthetics',
+    category: 'Hair, Beauty & Wellness',
+    services: ['Balayage & Hair Colour', 'Precision Cut & Style', 'Keratin Smoothing', 'Bridal Hair & Makeup', 'Facial & Skin Therapy'],
+    commonProblems: ['Colour correction needed', 'Last-minute event booking', 'Damaged hair treatment', 'Special occasion styling'],
+    qualificationQuestions: ['What service or transformation are you looking for?', 'Do you have current hair length/photos?', 'Preferred date and stylist?', 'Are you an existing client?'],
+    urgencyRules: {
+      hot: 'Same-day cancellation fill, emergency colour correction, wedding weekend',
+      warm: 'Standard cut and colour maintenance, monthly treatment',
+      low: 'Future consultation or general pricing'
+    },
+    leadScoringRules: 'Same-day transformation requests and high-value colour packages score 90-96.',
+    conversionEvent: 'BOOK CHAIR / STYLIST',
+    leadTypeLabel: 'Salon Bookings',
+    bookingLabel: 'Appointments',
+    bookingActionLabel: 'Book Stylist Chair',
+    valueLabel: 'Service Value',
+    teamLabel: 'Assigned Stylist / Specialist',
+    serviceAreaLabel: 'Salon Location',
+    bookingModalTitle: 'Reserve Stylist Chair',
+    greetingTemplate: "Welcome to {company}. Looking for a hair transformation, colour specialist, or beauty appointment? Tell us what you would love.",
+    brandSuffix: 'SalonLead AI',
+    heroLead: {
+      id: 999,
+      name: "Anika Verma",
+      suburb: "Sandton",
+      type: "Balayage Colour Correction",
+      urgency: "HOT",
+      value: 3800,
+      score: 94,
+      status: "Qualified",
+      time: "Just Now",
+      phone: "082 555 0199",
+      email: "anika.v@gmail.com",
+      property: "In-Salon",
+      roof: "Senior Colourist",
+      problem: "Previous salon left orange brassiness in hair. Urgent balayage correction and gloss toner needed before weekend event.",
+      aiSummary: "HOT LEAD: Urgent balayage colour correction for weekend event. Photo verified. Ready for same-day chair placement.",
+      source: "Instagram"
+    },
+    sampleLeads: [
+      { id: 1, name: "Chloe Botha", suburb: "Rosebank", type: "Keratin Treatment", urgency: "WARM", value: 2400, score: 76, status: "Contacted", time: "1 hour ago", phone: "082 333 4455", email: "chloe@style.co.za", property: "In-Salon", roof: "Keratin Smoothing", problem: "Frizzy hair treatment booking.", aiSummary: "Regular client looking for renewal.", source: "Link in Bio" },
+      { id: 2, name: "Thandi Mokoena", suburb: "Morningside", type: "Bridal Trial", urgency: "HOT", value: 5500, score: 92, status: "Inspection Booked", time: "3 hours ago", phone: "072 444 8899", email: "thandi@wedding.co.za", property: "In-Salon", roof: "Bridal Package", problem: "Bridal trial for 4 bridesmaids.", aiSummary: "High-value bridal booking.", source: "TikTok" }
+    ],
+    sampleFollowups: [
+      { id: 1, lead: "Chloe Botha", stage: "Appointment Offer", message: "Hi Chloe, we have Chair 2 available tomorrow at 14:00 with Mandy.", nextAction: "WhatsApp Slot Link", status: "Completed" }
+    ],
+    sampleBookings: [
+      { id: 1, customer: "Anika Verma", suburb: "Sandton", date: "2026-03-29", time: "02:30 PM", team: "Mandy (Master Colourist)", value: "R3,800", status: "Confirmed", type: "Balayage Correction" }
+    ],
+    benchmarks: {
+      avgResponseTime: "28 seconds",
+      industryAvgResponse: "2.4 hours",
+      monthlyEnquiryVolume: "140 – 320 leads / mo",
+      afterHoursEnquiryShare: "54% (browsing Instagram/TikTok after 8 PM)",
+      avgDealValue: "R1,800 – R5,500",
+      conversionLift: "+44% filled chair hours",
+      missedCallRate: "39% lost while stylists are with clients",
+      keyPitchPoint: "Stylists can't answer calls while working on clients. Over 50% of beauty enquiries happen at night on Instagram and TikTok. LeadMachine converts these into booked appointments 24/7."
+    },
+    getScript: (companyName, greeting) => [
+      { id: 0, type: 'ai', text: greeting || `Welcome to ${companyName}. How can our team help your look today?` },
+      { id: 1, type: 'user', text: "Hi, do you have any appointments available this afternoon for balayage colour correction and cut?", action: "Send message" },
+      { id: 2, type: 'ai', text: "Yes! We have an opening with our senior colourist Mandy. Do you have a quick photo of your current hair?" },
+      { id: 3, type: 'user', text: "[Photo Uploaded: hair_balayage_inquiry.jpg]", action: "Upload Hair Photo", isUpload: true },
+      { id: 4, type: 'ai', text: "Beautiful, we can definitely blend those tones. What time works best for you this afternoon?" },
+      { id: 5, type: 'user', text: "Around 02:30 PM if possible.", action: "Select 02:30 PM" },
+      { id: 6, type: 'ai', text: "Perfect. What contact cell can we send your booking confirmation and salon directions to?" },
+      { id: 7, type: 'user', text: "082 555 0199", action: "Enter Phone: 082 555 0199" },
+      { id: 8, type: 'ai', text: "Chair 3 is reserved with Mandy for 02:30 PM today! Would you like us to lock that in?", isFinal: true }
+    ]
+  },
+
+  clinic: {
+    id: 'clinic',
+    name: 'Medical Clinic & Wellness',
+    category: 'Healthcare & Consultations',
+    services: ['Doctor Consultation (GP)', 'Emergency Triage', 'Health Screenings & Bloods', 'Minor Procedures', 'Pediatric Checkups'],
+    commonProblems: ['Acute fever and respiratory symptoms', 'Wound dressing and stitches', 'Prescription renewal', 'Medical certificate required'],
+    qualificationQuestions: ['What symptoms are you experiencing?', 'Is this for an adult or child?', 'Do you require immediate doctor consultation?', 'Preferred clinic branch?'],
+    urgencyRules: {
+      hot: 'High acute fever, severe pain, breathing distress, sudden laceration',
+      warm: 'Standard medical consultation, prescription review, blood test',
+      low: 'General wellness check, medical aid renewal inquiry'
+    },
+    leadScoringRules: 'Acute clinical symptoms and same-day medical certificate needs score 92-98.',
+    conversionEvent: 'BOOK CONSULTATION',
+    leadTypeLabel: 'Clinic Bookings',
+    bookingLabel: 'Consultations',
+    bookingActionLabel: 'Book Doctor Consultation',
+    valueLabel: 'Consultation Fee',
+    teamLabel: 'Attending Doctor / Specialist',
+    serviceAreaLabel: 'Clinic Location',
+    bookingModalTitle: 'Schedule Doctor Consultation',
+    greetingTemplate: "Welcome to {company}. Need to see a doctor or book a medical consultation today? Tell us what symptoms you have.",
+    brandSuffix: 'ClinicLead AI',
+    heroLead: {
+      id: 999,
+      name: "Patrick Nkosi",
+      suburb: "Fourways",
+      type: "Urgent GP Medical Consultation",
+      urgency: "HOT",
+      value: 950,
+      score: 95,
+      status: "Qualified",
+      time: "Just Now",
+      phone: "082 555 0199",
+      email: "patrick.n@gmail.com",
+      property: "In-Clinic",
+      roof: "General Practice",
+      problem: "High fever (38.9°C), chills, and body aches since morning. Needs doctor consultation and sick note for work.",
+      aiSummary: "HOT LEAD: Acute viral/fever symptoms. Immediate triage confirmed for Dr. Jaco at 11:15 AM.",
+      source: "Google Ad"
+    },
+    sampleLeads: [
+      { id: 1, name: "David Smit", suburb: "Sandton", type: "Health Screening", urgency: "WARM", value: 1850, score: 72, status: "Contacted", time: "2 hours ago", phone: "083 444 5555", email: "dsmit@health.co.za", property: "In-Clinic", roof: "Executive Checkup", problem: "Annual executive vitality screening.", aiSummary: "Vitality points screening lead.", source: "WhatsApp" },
+      { id: 2, name: "Lerato Modise", suburb: "Midrand", type: "Pediatric Consultation", urgency: "HOT", value: 950, score: 94, status: "Inspection Booked", time: "3 hours ago", phone: "071 987 6543", email: "lerato.m@email.com", property: "In-Clinic", roof: "Child Check", problem: "Toddler ear infection and cough.", aiSummary: "Priority pediatric booking.", source: "WhatsApp" }
+    ],
+    sampleFollowups: [
+      { id: 1, lead: "David Smit", stage: "Pre-Consultation Prep", message: "Hi David, reminder for your fasting blood tests tomorrow morning at 08:00 AM.", nextAction: "SMS Reminder", status: "Completed" }
+    ],
+    sampleBookings: [
+      { id: 1, customer: "Patrick Nkosi", suburb: "Fourways", date: "2026-03-29", time: "11:15 AM", team: "Dr. Jaco V. (General Practitioner)", value: "R950", status: "Confirmed", type: "Urgent GP Consultation" }
+    ],
+    benchmarks: {
+      avgResponseTime: "30 seconds",
+      industryAvgResponse: "1.9 hours",
+      monthlyEnquiryVolume: "160 – 380 leads / mo",
+      afterHoursEnquiryShare: "48% (sick patients searching early morning & late night)",
+      avgDealValue: "R950 – R2,800",
+      conversionLift: "+39% patient show-up rate",
+      missedCallRate: "35% of busy morning calls go to voicemail",
+      keyPitchPoint: "When patients are sick, they need immediate reassurance and a confirmed appointment time. Automated intake triages urgency and books consultation slots in seconds."
+    },
+    getScript: (companyName, greeting) => [
+      { id: 0, type: 'ai', text: greeting || `Welcome to ${companyName}. How can our medical team assist you today?` },
+      { id: 1, type: 'user', text: "Hi, I have a high fever and severe flu symptoms since morning and need to see a doctor today.", action: "Send message" },
+      { id: 2, type: 'ai', text: "Sorry you're feeling unwell. We have open consultation slots today. What clinic branch is closest to you?" },
+      { id: 3, type: 'user', text: "Fourways clinic.", action: "Fourways Clinic" },
+      { id: 4, type: 'ai', text: "Understood. Dr. Jaco has an opening at 11:15 AM today in Fourways. Would you like to reserve that?" },
+      { id: 5, type: 'user', text: "Yes please, 11:15 AM is great.", action: "Confirm 11:15 AM" },
+      { id: 6, type: 'ai', text: "Thank you. What is your contact phone number and full name?" },
+      { id: 7, type: 'user', text: "Patrick Nkosi, 082 555 0199", action: "Patrick Nkosi (082 555 0199)" },
+      { id: 8, type: 'ai', text: `Thanks Patrick — your consultation for ${companyName} is confirmed for 11:15 AM with Dr. Jaco. Please bring your ID and medical aid card.`, isFinal: true }
+    ]
+  },
+
   general: {
     id: 'general',
     name: 'General Service Business',
@@ -700,11 +931,12 @@ export const INDUSTRY_PROFILES: Record<IndustryId, IndustryProfile> = {
       property: "Residential Property",
       roof: "Standard Service",
       problem: "Urgent on-site assistance needed for priority maintenance issue.",
-      aiSummary: "HOT ENQUIRY: Urgent service request in Fourways. Priority specialist consultation reserved."
+      aiSummary: "HOT ENQUIRY: Urgent service request in Fourways. Priority specialist consultation reserved.",
+      source: "WhatsApp"
     },
     sampleLeads: [
-      { id: 1, name: "Thabo Nkosi", suburb: "Sandton", type: "Site Assessment", urgency: "WARM", value: 16000, score: 78, status: "Contacted", time: "2 hours ago", phone: "082 123 4567", email: "thabo@example.com", property: "Commercial", roof: "Full Site", problem: "Requires professional assessment and quote.", aiSummary: "Consultation booked for site inspection." },
-      { id: 2, name: "Lerato Modise", suburb: "Midrand", type: "Standard Package", urgency: "LOW", value: 8500, score: 50, status: "New", time: "4 hours ago", phone: "071 987 6543", email: "lerato.m@email.com", property: "House", roof: "Standard", problem: "Requesting pricing for upcoming project.", aiSummary: "Automated nurture quote sent." }
+      { id: 1, name: "Thabo Nkosi", suburb: "Sandton", type: "Site Assessment", urgency: "WARM", value: 16000, score: 78, status: "Contacted", time: "2 hours ago", phone: "082 123 4567", email: "thabo@example.com", property: "Commercial", roof: "Full Site", problem: "Requires professional assessment and quote.", aiSummary: "Consultation booked for site inspection.", source: "WhatsApp" },
+      { id: 2, name: "Lerato Modise", suburb: "Midrand", type: "Standard Package", urgency: "LOW", value: 8500, score: 50, status: "New", time: "4 hours ago", phone: "071 987 6543", email: "lerato.m@email.com", property: "House", roof: "Standard", problem: "Requesting pricing for upcoming project.", aiSummary: "Automated nurture quote sent.", source: "Facebook Ad" }
     ],
     sampleFollowups: [
       { id: 1, lead: "Thabo Nkosi", stage: "5-min follow-up", message: "Hi Thabo, following up on your service enquiry in Sandton.", nextAction: "Send WhatsApp Confirmation", status: "Completed" }
@@ -765,6 +997,15 @@ export function detectIndustryFromUrl(url: string, rawName: string): { industryI
   }
   if (/auto|automotive|mechanic|motors|motor|panelbeater|carrepair|garage|brakes|tyres|tires|transmission/i.test(combined)) {
     return { industryId: 'auto_repair', confidence: 'High' };
+  }
+  if (/clean|cleaning|maid|wash|sanitiz|hygiene|carpet|janitor/i.test(combined)) {
+    return { industryId: 'cleaning', confidence: 'High' };
+  }
+  if (/salon|hair|beauty|barber|nails|lashes|spa|aesthetics|cosmetic/i.test(combined)) {
+    return { industryId: 'salon', confidence: 'High' };
+  }
+  if (/clinic|medical|doctor|gp|physio|health|wellness|hospital/i.test(combined)) {
+    return { industryId: 'clinic', confidence: 'High' };
   }
 
   return { industryId: 'general', confidence: 'Low' };

@@ -8,6 +8,8 @@ import {
   DemoFollowup as FollowupItem,
   DemoBooking as InspectionItem
 } from './industryProfiles';
+import { QuarterlyTargetGauge } from './components/QuarterlyTargetGauge';
+import { LiveSplitScreenDemo } from './components/LiveSplitScreenDemo';
 
 // --- DEFAULT BRAND PROFILES ---
 interface ProspectProfile {
@@ -97,6 +99,12 @@ function deriveProfileFromUrl(inputUrl: string, forcedIndustryId?: IndustryId): 
     company += ' Air Conditioning';
   } else if (industryId === 'auto_repair' && !lowerCompany.includes('auto') && !lowerCompany.includes('mechanic') && !lowerCompany.includes('motor') && !lowerCompany.includes('garage')) {
     company += ' Auto Repair';
+  } else if (industryId === 'cleaning' && !lowerCompany.includes('clean') && !lowerCompany.includes('hygiene')) {
+    company += ' Cleaning Services';
+  } else if (industryId === 'salon' && !lowerCompany.includes('salon') && !lowerCompany.includes('hair') && !lowerCompany.includes('beauty')) {
+    company += ' Hair & Beauty Lounge';
+  } else if (industryId === 'clinic' && !lowerCompany.includes('clinic') && !lowerCompany.includes('medical') && !lowerCompany.includes('care')) {
+    company += ' Medical Clinic';
   } else if (industryId === 'general' && !lowerCompany.includes('service') && !lowerCompany.includes('solution') && !lowerCompany.includes('group')) {
     company += ' Services';
   }
@@ -111,6 +119,9 @@ function deriveProfileFromUrl(inputUrl: string, forcedIndustryId?: IndustryId): 
     solar: "Turn high-bill solar enquiries into qualified engineering consultations.",
     hvac: "Turn heating & cooling breakdowns into booked service visits.",
     auto_repair: "Turn vehicle repair requests into booked workshop assessments.",
+    cleaning: "Turn urgent move-out and office cleaning requests into booked crews.",
+    salon: "Turn evening beauty and hair enquiries into fully booked chair appointments.",
+    clinic: "Turn patient symptom searches into confirmed doctor consultations.",
     general: "Turn inbound customer enquiries into booked service consultations."
   };
 
@@ -270,10 +281,51 @@ function OwnerDemoControlScreen({
   const [draftProfile, setDraftProfile] = useState<ProspectProfile | null>(null);
   const [toastMessage, setToastMessage] = useState("");
   const [showConfirmReset, setShowConfirmReset] = useState(false);
+  const [copiedShareUrl, setCopiedShareUrl] = useState("");
+  const [isCopied, setIsCopied] = useState(false);
 
   const activeIndustry = step === 'edit_preview' && draftProfile
     ? (INDUSTRY_PROFILES[draftProfile.industryId] || INDUSTRY_PROFILES.roofing)
     : (INDUSTRY_PROFILES[currentProspect.industryId] || INDUSTRY_PROFILES.roofing);
+
+  const handleShareDemo = async (targetProfile: ProspectProfile) => {
+    let shareUrl = "";
+    try {
+      const url = new URL(window.location.origin + window.location.pathname);
+      url.searchParams.set('demo', 'share');
+      url.searchParams.set('industry', targetProfile.industryId);
+      url.searchParams.set('url', targetProfile.websiteUrl);
+      url.searchParams.set('company', targetProfile.companyName);
+      url.searchParams.set('sid', Math.random().toString(36).substring(2, 8));
+      shareUrl = url.toString();
+    } catch {
+      shareUrl = `${window.location.origin}${window.location.pathname}?demo=share&industry=${targetProfile.industryId}&url=${encodeURIComponent(targetProfile.websiteUrl)}&company=${encodeURIComponent(targetProfile.companyName)}`;
+    }
+
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = shareUrl;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      setIsCopied(true);
+      setCopiedShareUrl(shareUrl);
+      setToastMessage("✓ Share link copied to clipboard!");
+      setTimeout(() => setIsCopied(false), 3000);
+      setTimeout(() => setToastMessage(""), 3500);
+    } catch {
+      setCopiedShareUrl(shareUrl);
+      setToastMessage("Link generated below");
+      setTimeout(() => setToastMessage(""), 3500);
+    }
+  };
 
   const handleGenerate = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -295,6 +347,7 @@ function OwnerDemoControlScreen({
     setShowConfirmReset(false);
     setUrlInput("");
     setDraftProfile(null);
+    setCopiedShareUrl("");
     onResetDefault();
   };
 
@@ -408,7 +461,16 @@ function OwnerDemoControlScreen({
               </select>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleShareDemo(currentProspect)}
+                className="text-xs px-3.5 py-1.5 bg-lime-400 hover:bg-lime-300 text-gray-950 font-bold rounded-lg transition shadow-md flex items-center space-x-1.5 cursor-pointer"
+                title="Generate shareable URL and copy to clipboard"
+              >
+                <span>🔗</span>
+                <span>{isCopied ? "✓ Link Copied!" : "Share Demo"}</span>
+              </button>
               <button
                 type="button"
                 onClick={() => setShowConfirmReset(true)}
@@ -425,6 +487,46 @@ function OwnerDemoControlScreen({
               </button>
             </div>
           </div>
+
+          {/* Shareable Link Output Card */}
+          {copiedShareUrl && (
+            <div className="pt-3 border-t border-gray-800/80 space-y-2 animate-fadeIn bg-gray-900/60 -mx-5 -mb-5 p-4 rounded-b-xl border-t">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-lime-400 font-bold font-mono uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse"></span>
+                  Shareable Demo Link Generated
+                </span>
+                <span className="text-gray-400 font-mono text-[10px]">
+                  Copied to Clipboard
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={copiedShareUrl}
+                  className="flex-1 bg-gray-950 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-lime-300 font-mono select-all focus:outline-none focus:border-lime-400"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (navigator?.clipboard?.writeText) {
+                      navigator.clipboard.writeText(copiedShareUrl);
+                      setIsCopied(true);
+                      setToastMessage("✓ Copied again!");
+                      setTimeout(() => setIsCopied(false), 2000);
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-semibold rounded-lg border border-gray-700 cursor-pointer"
+                >
+                  {isCopied ? "Copied!" : "Copy"}
+                </button>
+              </div>
+              <p className="text-[10px] text-gray-400">
+                Send this link to <strong className="text-white">{currentProspect.companyName}</strong> — opening it automatically loads their personalized multi-channel demo.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* INDUSTRY INSIGHTS SUMMARY CARD */}
@@ -758,7 +860,16 @@ function OwnerDemoControlScreen({
               >
                 ← Switch Prospect
               </button>
-              <div className="flex items-center space-x-3 w-full sm:w-auto">
+              <div className="flex flex-wrap items-center space-x-3 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => draftProfile && handleShareDemo(draftProfile)}
+                  className="px-5 py-3.5 bg-gray-800 hover:bg-gray-700 text-lime-400 border border-gray-700 font-bold text-sm rounded-xl transition flex items-center justify-center space-x-1.5 cursor-pointer"
+                  title="Generate shareable URL and copy to clipboard"
+                >
+                  <span>🔗</span>
+                  <span>{isCopied ? "✓ Link Copied!" : "Share Demo"}</span>
+                </button>
                 <button
                   onClick={() => setShowConfirmReset(true)}
                   className="px-4 py-3 text-xs text-gray-400 hover:text-white transition cursor-pointer"
@@ -774,6 +885,42 @@ function OwnerDemoControlScreen({
                 </button>
               </div>
             </div>
+
+            {copiedShareUrl && (
+              <div className="mt-4 bg-gray-950 border border-lime-500/40 rounded-xl p-4 space-y-2 animate-fadeIn">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-lime-400 font-bold font-mono uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse"></span>
+                    Shareable Demo Link Ready
+                  </span>
+                  <span className="text-gray-400 font-mono text-[10px]">
+                    Copied to Clipboard
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={copiedShareUrl}
+                    className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-lime-300 font-mono select-all focus:outline-none focus:border-lime-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (navigator?.clipboard?.writeText) {
+                        navigator.clipboard.writeText(copiedShareUrl);
+                        setIsCopied(true);
+                        setToastMessage("✓ Copied again!");
+                        setTimeout(() => setIsCopied(false), 2000);
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-semibold rounded-lg border border-gray-700 cursor-pointer"
+                  >
+                    {isCopied ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -1052,6 +1199,7 @@ function DashboardApp({
   inspections,
   setInspections,
   onRunCustomerDemo,
+  onRunLiveSplitDemo,
   onLogoDoubleClick
 }: {
   prospect: ProspectProfile;
@@ -1062,6 +1210,7 @@ function DashboardApp({
   inspections: InspectionItem[];
   setInspections: React.Dispatch<React.SetStateAction<InspectionItem[]>>;
   onRunCustomerDemo: () => void;
+  onRunLiveSplitDemo?: () => void;
   onLogoDoubleClick: () => void;
 }) {
   const [currentTab, setCurrentTab] = useState<'overview' | 'leads' | 'inbox' | 'followups' | 'inspections' | 'analytics' | 'settings'>('overview');
@@ -1143,6 +1292,7 @@ function DashboardApp({
   // Projected Monthly Revenue model over next 4 weeks
   const projectedCloseRate = 0.82;
   const projectedMonthlyTotal = Math.round(totalUrgencyValue * projectedCloseRate);
+  const quarterlyTarget = Math.max(Math.round(projectedMonthlyTotal * 2.8), 120000);
   const week1Revenue = Math.round(totalUrgencyValue * 0.22);
   const week2Revenue = Math.round(totalUrgencyValue * 0.48);
   const week3Revenue = Math.round(totalUrgencyValue * 0.71);
@@ -1290,8 +1440,17 @@ function DashboardApp({
           </nav>
         </div>
 
-        {/* Bottom Actions (Only test customer intake, NO admin buttons) */}
-        <div className="p-4 border-t border-gray-800">
+        {/* Bottom Actions */}
+        <div className="p-4 border-t border-gray-800 space-y-2">
+          {onRunLiveSplitDemo && (
+            <button
+              onClick={onRunLiveSplitDemo}
+              className="w-full bg-slate-800 hover:bg-slate-700 text-lime-400 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center space-x-2 border border-slate-700 transition cursor-pointer"
+            >
+              <span>⚡</span>
+              <span>Live Split Demo</span>
+            </button>
+          )}
           <button
             onClick={onRunCustomerDemo}
             className="w-full bg-lime-400 hover:bg-lime-500 text-gray-950 font-extrabold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center space-x-2 shadow-lg transition cursor-pointer"
@@ -1313,6 +1472,15 @@ function DashboardApp({
             <span className="bg-gray-800 text-gray-300 text-[10px] font-bold px-2.5 py-1 rounded-md border border-gray-700 tracking-wider">
               DEMO DATA
             </span>
+            {onRunLiveSplitDemo && (
+              <button
+                onClick={onRunLiveSplitDemo}
+                className="bg-slate-800 hover:bg-slate-700 text-lime-400 font-bold px-3 py-1.5 rounded-lg text-xs border border-slate-700 transition cursor-pointer flex items-center space-x-1"
+              >
+                <span>⚡</span>
+                <span>Live Split Demo</span>
+              </button>
+            )}
           </div>
 
           <div className="flex items-center space-x-4">
@@ -1666,154 +1834,168 @@ function DashboardApp({
                 </div>
               </div>
 
-              {/* PROJECTED MONTHLY REVENUE LINE CHART WIDGET */}
-              <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-800 pb-4">
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-lime-400 font-bold text-base">📈</span>
-                      <h3 className="font-extrabold text-white text-base">Projected Monthly Revenue</h3>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Projected revenue trends over the next 4 weeks modeled from active leads, historical closure velocity, and inspection schedules.
-                    </p>
-                  </div>
-                  <div className="bg-gray-950 px-4 py-2 rounded-xl border border-gray-800 shrink-0 text-right">
-                    <span className="text-[10px] text-gray-400 uppercase tracking-wider block">Estimated Month-End Total</span>
-                    <span className="text-base font-extrabold text-lime-400 font-mono">
-                      R{projectedMonthlyTotal.toLocaleString()}
-                    </span>
-                    <span className="text-[10px] text-lime-400/80 block font-mono">
-                      ~{Math.round(projectedCloseRate * 100)}% Pipeline Realization
-                    </span>
-                  </div>
+              {/* PERFORMANCE GAUGE (RECHARTS) & PROJECTED REVENUE TRENDS */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-1 flex flex-col">
+                  <QuarterlyTargetGauge
+                    projectedMonthlyRevenue={projectedMonthlyTotal}
+                    quarterlyTarget={quarterlyTarget}
+                    currencyPrefix="R"
+                    industryName={currentIndustry.name}
+                  />
                 </div>
 
-                {/* Line Chart Graphic */}
-                <div className="bg-gray-950/80 border border-gray-800 rounded-xl p-5 space-y-4">
-                  <div className="flex items-center justify-between text-xs text-gray-400 pb-1">
-                    <span className="font-semibold text-white flex items-center gap-1.5">
-                      <span className="w-2.5 h-0.5 bg-lime-400 inline-block rounded-full"></span>
-                      Cumulative 4-Week Realization Curve
-                    </span>
-                    <span className="font-mono text-[11px] text-gray-400">Target Ceiling: R{maxWeeklyRevenue.toLocaleString()}</span>
-                  </div>
-
-                  {/* SVG Line Chart */}
-                  <div className="w-full overflow-x-auto custom-scrollbar">
-                    <svg
-                      viewBox="0 0 600 200"
-                      className="w-full min-w-[500px] h-48"
-                      preserveAspectRatio="none"
-                    >
-                      <defs>
-                        <linearGradient id="revenueLineGrad" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="0%" stopColor="#a3e635" />
-                          <stop offset="50%" stopColor="#84cc16" />
-                          <stop offset="100%" stopColor="#22c55e" />
-                        </linearGradient>
-                        <linearGradient id="revenueAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#84cc16" stopOpacity="0.32" />
-                          <stop offset="60%" stopColor="#84cc16" stopOpacity="0.08" />
-                          <stop offset="100%" stopColor="#84cc16" stopOpacity="0.0" />
-                        </linearGradient>
-                      </defs>
-
-                      {/* Horizontal Grid Lines */}
-                      <line x1="30" y1={chartBaseY} x2="570" y2={chartBaseY} stroke="#1f2937" strokeWidth="1" strokeDasharray="4 4" />
-                      <line x1="30" y1={Math.round(chartBaseY - chartHeight * 0.33)} x2="570" y2={Math.round(chartBaseY - chartHeight * 0.33)} stroke="#1f2937" strokeWidth="1" strokeDasharray="4 4" />
-                      <line x1="30" y1={Math.round(chartBaseY - chartHeight * 0.66)} x2="570" y2={Math.round(chartBaseY - chartHeight * 0.66)} stroke="#1f2937" strokeWidth="1" strokeDasharray="4 4" />
-                      <line x1="30" y1={chartBaseY - chartHeight} x2="570" y2={chartBaseY - chartHeight} stroke="#1f2937" strokeWidth="1" strokeDasharray="4 4" />
-
-                      {/* Y-Axis Value Labels */}
-                      <text x="35" y={chartBaseY - chartHeight + 4} fill="#6b7280" fontSize="9" fontFamily="monospace">
-                        R{maxWeeklyRevenue.toLocaleString()}
-                      </text>
-                      <text x="35" y={Math.round(chartBaseY - chartHeight * 0.5) + 3} fill="#4b5563" fontSize="9" fontFamily="monospace">
-                        R{Math.round(maxWeeklyRevenue / 2).toLocaleString()}
-                      </text>
-                      <text x="35" y={chartBaseY - 4} fill="#4b5563" fontSize="9" fontFamily="monospace">
-                        R0
-                      </text>
-
-                      {/* Shaded Area Under Curve */}
-                      <path
-                        d={`M 60,${chartBaseY} L 60,${y1} C 130,${(y1 + y2) / 2} 150,${(y1 + y2) / 2} 220,${y2} C 290,${(y2 + y3) / 2} 310,${(y2 + y3) / 2} 380,${y3} C 450,${(y3 + y4) / 2} 470,${(y3 + y4) / 2} 540,${y4} L 540,${chartBaseY} Z`}
-                        fill="url(#revenueAreaGrad)"
-                      />
-
-                      {/* Smooth Line Stroke */}
-                      <path
-                        d={`M 60,${y1} C 130,${(y1 + y2) / 2} 150,${(y1 + y2) / 2} 220,${y2} C 290,${(y2 + y3) / 2} 310,${(y2 + y3) / 2} 380,${y3} C 450,${(y3 + y4) / 2} 470,${(y3 + y4) / 2} 540,${y4}`}
-                        fill="none"
-                        stroke="url(#revenueLineGrad)"
-                        strokeWidth="3.5"
-                        strokeLinecap="round"
-                      />
-
-                      {/* Data Point Nodes and Tooltip Badges */}
-                      {[
-                        { x: 60, y: y1, val: week1Revenue, week: 'Week 1' },
-                        { x: 220, y: y2, val: week2Revenue, week: 'Week 2' },
-                        { x: 380, y: y3, val: week3Revenue, week: 'Week 3' },
-                        { x: 540, y: y4, val: week4Revenue, week: 'Week 4' }
-                      ].map((pt, idx) => (
-                        <g key={idx} className="cursor-pointer group">
-                          {/* Glow circle */}
-                          <circle cx={pt.x} cy={pt.y} r="10" fill="#84cc16" opacity="0.2" className="animate-pulse" />
-                          {/* Outer node */}
-                          <circle cx={pt.x} cy={pt.y} r="6" fill="#0f172a" stroke="#84cc16" strokeWidth="2.5" />
-                          {/* Inner center */}
-                          <circle cx={pt.x} cy={pt.y} r="2.5" fill="#a3e635" />
-                          
-                          {/* Value Tag Badge */}
-                          <rect
-                            x={pt.x - 42}
-                            y={pt.y - 30}
-                            width="84"
-                            height="18"
-                            rx="4"
-                            fill="#020617"
-                            stroke="#334155"
-                            strokeWidth="1"
-                          />
-                          <text
-                            x={pt.x}
-                            y={pt.y - 17}
-                            textAnchor="middle"
-                            fill="#ffffff"
-                            fontSize="10"
-                            fontWeight="bold"
-                            fontFamily="monospace"
-                          >
-                            R{pt.val.toLocaleString()}
-                          </text>
-                        </g>
-                      ))}
-                    </svg>
-                  </div>
-
-                  {/* 4-Week Breakdown Cards */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                    {weeklyTrendData.map((item, index) => (
-                      <div
-                        key={index}
-                        className="bg-gray-900/90 border border-gray-800/90 rounded-xl p-3 space-y-1 hover:border-lime-500/40 transition"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-lime-400 font-mono">{item.week}</span>
-                          <span className="text-[10px] bg-gray-800 text-gray-300 font-mono px-1.5 py-0.5 rounded">
-                            {item.share}
-                          </span>
+                <div className="lg:col-span-2">
+                  {/* PROJECTED MONTHLY REVENUE LINE CHART WIDGET */}
+                  <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-6 h-full flex flex-col justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-800 pb-4">
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-lime-400 font-bold text-base">📈</span>
+                          <h3 className="font-extrabold text-white text-base">Projected Monthly Revenue</h3>
                         </div>
-                        <p className="text-base font-extrabold text-white font-mono">
-                          R{item.value.toLocaleString()}
-                        </p>
-                        <p className="text-[10px] text-gray-400 leading-tight">
-                          {item.label}
+                        <p className="text-xs text-gray-400 mt-1">
+                          Projected revenue trends over the next 4 weeks modeled from active leads, historical closure velocity, and inspection schedules.
                         </p>
                       </div>
-                    ))}
+                      <div className="bg-gray-950 px-4 py-2 rounded-xl border border-gray-800 shrink-0 text-right">
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wider block">Estimated Month-End Total</span>
+                        <span className="text-base font-extrabold text-lime-400 font-mono">
+                          R{projectedMonthlyTotal.toLocaleString()}
+                        </span>
+                        <span className="text-[10px] text-lime-400/80 block font-mono">
+                          ~{Math.round(projectedCloseRate * 100)}% Pipeline Realization
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Line Chart Graphic */}
+                    <div className="bg-gray-950/80 border border-gray-800 rounded-xl p-5 space-y-4">
+                      <div className="flex items-center justify-between text-xs text-gray-400 pb-1">
+                        <span className="font-semibold text-white flex items-center gap-1.5">
+                          <span className="w-2.5 h-0.5 bg-lime-400 inline-block rounded-full"></span>
+                          Cumulative 4-Week Realization Curve
+                        </span>
+                        <span className="font-mono text-[11px] text-gray-400">Target Ceiling: R{maxWeeklyRevenue.toLocaleString()}</span>
+                      </div>
+
+                      {/* SVG Line Chart */}
+                      <div className="w-full overflow-x-auto custom-scrollbar">
+                        <svg
+                          viewBox="0 0 600 200"
+                          className="w-full min-w-[500px] h-48"
+                          preserveAspectRatio="none"
+                        >
+                          <defs>
+                            <linearGradient id="revenueLineGrad" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="0%" stopColor="#a3e635" />
+                              <stop offset="50%" stopColor="#84cc16" />
+                              <stop offset="100%" stopColor="#22c55e" />
+                            </linearGradient>
+                            <linearGradient id="revenueAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#84cc16" stopOpacity="0.32" />
+                              <stop offset="60%" stopColor="#84cc16" stopOpacity="0.08" />
+                              <stop offset="100%" stopColor="#84cc16" stopOpacity="0.0" />
+                            </linearGradient>
+                          </defs>
+
+                          {/* Horizontal Grid Lines */}
+                          <line x1="30" y1={chartBaseY} x2="570" y2={chartBaseY} stroke="#1f2937" strokeWidth="1" strokeDasharray="4 4" />
+                          <line x1="30" y1={Math.round(chartBaseY - chartHeight * 0.33)} x2="570" y2={Math.round(chartBaseY - chartHeight * 0.33)} stroke="#1f2937" strokeWidth="1" strokeDasharray="4 4" />
+                          <line x1="30" y1={Math.round(chartBaseY - chartHeight * 0.66)} x2="570" y2={Math.round(chartBaseY - chartHeight * 0.66)} stroke="#1f2937" strokeWidth="1" strokeDasharray="4 4" />
+                          <line x1="30" y1={chartBaseY - chartHeight} x2="570" y2={chartBaseY - chartHeight} stroke="#1f2937" strokeWidth="1" strokeDasharray="4 4" />
+
+                          {/* Y-Axis Value Labels */}
+                          <text x="35" y={chartBaseY - chartHeight + 4} fill="#6b7280" fontSize="9" fontFamily="monospace">
+                            R{maxWeeklyRevenue.toLocaleString()}
+                          </text>
+                          <text x="35" y={Math.round(chartBaseY - chartHeight * 0.5) + 3} fill="#4b5563" fontSize="9" fontFamily="monospace">
+                            R{Math.round(maxWeeklyRevenue / 2).toLocaleString()}
+                          </text>
+                          <text x="35" y={chartBaseY - 4} fill="#4b5563" fontSize="9" fontFamily="monospace">
+                            R0
+                          </text>
+
+                          {/* Shaded Area Under Curve */}
+                          <path
+                            d={`M 60,${chartBaseY} L 60,${y1} C 130,${(y1 + y2) / 2} 150,${(y1 + y2) / 2} 220,${y2} C 290,${(y2 + y3) / 2} 310,${(y2 + y3) / 2} 380,${y3} C 450,${(y3 + y4) / 2} 470,${(y3 + y4) / 2} 540,${y4} L 540,${chartBaseY} Z`}
+                            fill="url(#revenueAreaGrad)"
+                          />
+
+                          {/* Smooth Line Stroke */}
+                          <path
+                            d={`M 60,${y1} C 130,${(y1 + y2) / 2} 150,${(y1 + y2) / 2} 220,${y2} C 290,${(y2 + y3) / 2} 310,${(y2 + y3) / 2} 380,${y3} C 450,${(y3 + y4) / 2} 470,${(y3 + y4) / 2} 540,${y4}`}
+                            fill="none"
+                            stroke="url(#revenueLineGrad)"
+                            strokeWidth="3.5"
+                            strokeLinecap="round"
+                          />
+
+                          {/* Data Point Nodes and Tooltip Badges */}
+                          {[
+                            { x: 60, y: y1, val: week1Revenue, week: 'Week 1' },
+                            { x: 220, y: y2, val: week2Revenue, week: 'Week 2' },
+                            { x: 380, y: y3, val: week3Revenue, week: 'Week 3' },
+                            { x: 540, y: y4, val: week4Revenue, week: 'Week 4' }
+                          ].map((pt, idx) => (
+                            <g key={idx} className="cursor-pointer group">
+                              {/* Glow circle */}
+                              <circle cx={pt.x} cy={pt.y} r="10" fill="#84cc16" opacity="0.2" className="animate-pulse" />
+                              {/* Outer node */}
+                              <circle cx={pt.x} cy={pt.y} r="6" fill="#0f172a" stroke="#84cc16" strokeWidth="2.5" />
+                              {/* Inner center */}
+                              <circle cx={pt.x} cy={pt.y} r="2.5" fill="#a3e635" />
+                              
+                              {/* Value Tag Badge */}
+                              <rect
+                                x={pt.x - 42}
+                                y={pt.y - 30}
+                                width="84"
+                                height="18"
+                                rx="4"
+                                fill="#020617"
+                                stroke="#334155"
+                                strokeWidth="1"
+                              />
+                              <text
+                                x={pt.x}
+                                y={pt.y - 17}
+                                textAnchor="middle"
+                                fill="#ffffff"
+                                fontSize="10"
+                                fontWeight="bold"
+                                fontFamily="monospace"
+                              >
+                                R{pt.val.toLocaleString()}
+                              </text>
+                            </g>
+                          ))}
+                        </svg>
+                      </div>
+
+                      {/* 4-Week Breakdown Cards */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                        {weeklyTrendData.map((item, index) => (
+                          <div
+                            key={index}
+                            className="bg-gray-900/90 border border-gray-800/90 rounded-xl p-3 space-y-1 hover:border-lime-500/40 transition"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-bold text-lime-400 font-mono">{item.week}</span>
+                              <span className="text-[10px] bg-gray-800 text-gray-300 font-mono px-1.5 py-0.5 rounded">
+                                {item.share}
+                              </span>
+                            </div>
+                            <p className="text-base font-extrabold text-white font-mono">
+                              R{item.value.toLocaleString()}
+                            </p>
+                            <p className="text-[10px] text-gray-400 leading-tight">
+                              {item.label}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2239,7 +2421,7 @@ const INITIAL_INSPECTIONS: InspectionItem[] = INDUSTRY_PROFILES.roofing.sampleBo
 
 export default function App() {
   const [prospect, setProspect] = useState<ProspectProfile>(DEFAULT_PROSPECT);
-  const [activeView, setActiveView] = useState<'landing' | 'customer-demo' | 'dashboard' | 'owner-control'>('landing');
+  const [activeView, setActiveView] = useState<'live-split-demo' | 'landing' | 'customer-demo' | 'dashboard' | 'owner-control'>('live-split-demo');
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [leads, setLeads] = useState<Lead[]>(INITIAL_LEADS);
   const [followups, setFollowups] = useState<FollowupItem[]>(INITIAL_FOLLOWUPS);
@@ -2251,34 +2433,62 @@ export default function App() {
     setTimeout(() => setToastMessage(""), 3500);
   };
 
+  // Auto-load shared prospect demo from URL parameters if present
+  useEffect(() => {
+    try {
+      if (typeof window === 'undefined') return;
+      const params = new URLSearchParams(window.location.search);
+      const sharedIndustry = params.get('industry') as IndustryId | null;
+      const sharedUrl = params.get('url');
+      const sharedCompany = params.get('company');
+
+      if (sharedIndustry || sharedUrl || sharedCompany) {
+        const targetUrl = sharedUrl || DEFAULT_PROSPECT.websiteUrl;
+        const validInd = sharedIndustry && INDUSTRY_PROFILES[sharedIndustry] ? sharedIndustry : undefined;
+        const derived = deriveProfileFromUrl(targetUrl, validInd);
+        if (sharedCompany) {
+          derived.companyName = sharedCompany;
+          derived.dashboardBusinessName = sharedCompany;
+        }
+        setProspect(derived);
+        const ind = INDUSTRY_PROFILES[derived.industryId] || INDUSTRY_PROFILES.roofing;
+        setLeads([...ind.sampleLeads]);
+        setFollowups([...ind.sampleFollowups]);
+        setInspections([...ind.sampleBookings]);
+        setActiveView('live-split-demo');
+        triggerToast(`Shared demo loaded for ${derived.companyName}!`);
+      }
+    } catch (e) {
+      console.warn("Could not parse shared demo parameters", e);
+    }
+  }, []);
+
+  const handleSelectIndustry = (newIndustryId: IndustryId) => {
+    const updated = deriveProfileFromUrl(prospect.websiteUrl, newIndustryId);
+    setProspect(updated);
+    const ind = INDUSTRY_PROFILES[newIndustryId] || INDUSTRY_PROFILES.roofing;
+    setLeads([...ind.sampleLeads]);
+    setFollowups([...ind.sampleFollowups]);
+    setInspections([...ind.sampleBookings]);
+    triggerToast(`Switched industry demo to ${ind.name}!`);
+  };
+
   const handleActivateProspect = (newProspect: ProspectProfile) => {
     setProspect(newProspect);
     const ind = INDUSTRY_PROFILES[newProspect.industryId] || INDUSTRY_PROFILES.general;
     setLeads([...ind.sampleLeads]);
     setFollowups([...ind.sampleFollowups]);
     setInspections([...ind.sampleBookings]);
-    setActiveView('landing');
+    setActiveView('live-split-demo');
     triggerToast(`Demo activated for ${newProspect.companyName}!`);
   };
 
   const handleResetDefault = () => {
-    // 1. Restore the original RoofLead AI default prospect profile
-    // 2. Remove the currently active prospect company
-    // 3. Remove the currently active prospect website URL
-    // 4. Restore the default logo
-    // 5. Restore default accent colour
-    // 6. Restore default headline/subheadline
-    // 7. Restore default greeting
-    // 8. Reset demo leads
-    // 9. Reset follow-ups
-    // 10. Reset inspections
-    // 11. Reset all demo statistics/state
-    // 12. Return the application to the default landing page
     setProspect({ ...DEFAULT_PROSPECT });
     setLeads([...INITIAL_LEADS]);
     setFollowups([...INITIAL_FOLLOWUPS]);
     setInspections([...INITIAL_INSPECTIONS]);
-    setActiveView('landing');
+    setActiveView('live-split-demo');
     triggerToast("App restored to default demo state.");
   };
 
@@ -2321,10 +2531,24 @@ export default function App() {
         }}
       />
 
+      {/* PRIMARY SCREEN: PERMANENT SPLIT-SCREEN LIVE DEMO */}
+      {activeView === 'live-split-demo' && (
+        <LiveSplitScreenDemo
+          currentIndustryId={prospect.industryId}
+          companyName={prospect.companyName}
+          logoUrl={prospect.logoUrl}
+          onSelectIndustry={handleSelectIndustry}
+          onOpenFullDashboard={() => setActiveView('dashboard')}
+          onOpenLandingPage={() => setActiveView('landing')}
+          onLogoDoubleClick={handleLogoDoubleClick}
+          initialLeads={leads}
+        />
+      )}
+
       {activeView === 'landing' && (
         <LandingScreen
           prospect={prospect}
-          onStartDemo={() => setActiveView('customer-demo')}
+          onStartDemo={() => setActiveView('live-split-demo')}
           onEnterApp={() => setActiveView('dashboard')}
           onLogoDoubleClick={handleLogoDoubleClick}
         />
@@ -2334,7 +2558,7 @@ export default function App() {
         <CustomerDemoFlow
           prospect={prospect}
           onComplete={handleCustomerDemoComplete}
-          onCancel={() => setActiveView('landing')}
+          onCancel={() => setActiveView('live-split-demo')}
         />
       )}
 
@@ -2348,6 +2572,7 @@ export default function App() {
           inspections={inspections}
           setInspections={setInspections}
           onRunCustomerDemo={() => setActiveView('customer-demo')}
+          onRunLiveSplitDemo={() => setActiveView('live-split-demo')}
           onLogoDoubleClick={handleLogoDoubleClick}
         />
       )}
@@ -2357,7 +2582,7 @@ export default function App() {
           currentProspect={prospect}
           onActivateProspect={handleActivateProspect}
           onResetDefault={handleResetDefault}
-          onClose={() => setActiveView('landing')}
+          onClose={() => setActiveView('live-split-demo')}
         />
       )}
     </div>
