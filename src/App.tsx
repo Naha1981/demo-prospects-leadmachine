@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getProspect, Prospect } from "./prospects";
+import { getProspect, prospects, Prospect } from "./prospects";
 
 const solutionLabels: Record<string,string> = {
   "Lead Machine": "Lead recovery & qualification",
@@ -248,7 +248,17 @@ function ControlCentre({p}:{p:Prospect}) {
 }
 
 function Prototype({p}:{p:Prospect}) {
-  useEffect(()=>{track(p,"session_started"); const t=window.setTimeout(()=>track(p,"demo_started"),700); return ()=>window.clearTimeout(t);},[p.id]);
+  useEffect(()=>{
+    track(p,"session_started");
+    const t=window.setTimeout(()=>track(p,"demo_started"),700);
+    if (window.location.pathname.startsWith("/api/r/") || new URLSearchParams(window.location.search).has("tracking_id")) {
+      const params = new URLSearchParams(window.location.search);
+      params.set("prospect", p.id);
+      params.set("tracking_id", p.trackingCode);
+      window.history.replaceState({}, "", `/p/${encodeURIComponent(p.id)}?${params.toString()}`);
+    }
+    return ()=>window.clearTimeout(t);
+  },[p.id]);
   const isCore=p.solution;
   return <div className="app-shell">
     <header className="topbar">
@@ -282,8 +292,13 @@ function Prototype({p}:{p:Prospect}) {
 
 export default function App() {
   const path = window.location.pathname.split("/").filter(Boolean);
-  const id = path[0] === "p" ? path[1] : "";
-  const prospect = useMemo(()=>getProspect(id || ""),[id]);
+  const search = new URLSearchParams(window.location.search);
+  const directId = path[0] === "p" ? path[1] : search.get("prospect") || "";
+  const trackingCode = path[0] === "api" && path[1] === "r" ? path[2] : search.get("tracking_id") || "";
+  const prospect = useMemo(
+    ()=>getProspect(directId || "") || prospects.find((p)=>p.trackingCode === trackingCode),
+    [directId, trackingCode]
+  );
 
   if (!prospect) {
     return <div className="landing"><div className="landing-card"><div className="brand">NahaLabs <span>· Prospect Demo</span></div><h1>Personalised operational prototype</h1><p>Open the prospect-specific link from NahaLabs outreach to load the correct demonstration.</p><div className="muted">This demo environment is not a generic SaaS dashboard. Each tracked link resolves to a prospect-specific experience.</div></div></div>;
